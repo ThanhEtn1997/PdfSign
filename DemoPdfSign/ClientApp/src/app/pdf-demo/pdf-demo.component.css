@@ -1,0 +1,18 @@
+.signpad {
+    border: solid black 1px;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.btn-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.btn-group > div {
+    margin: 2px;
+}
+
+.btn-group > div > button {
+    width: 100%;
+}
