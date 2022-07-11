@@ -66,13 +66,15 @@ namespace DemoPdfSign.Controllers
         [HttpPost("sign2")]
         public async Task<string> sign2(PdfSignRequest pdfSignRequest)
         {
-            // create a temporary ServerTextControl
+            Document wrdDoc = new Microsoft.Office.Interop.Word.Document();
+            Application wrdApp = new Application();
+
             try
             {
                 var imageUrl = saveImage(pdfSignRequest.image);
 
                 Object oMissing = System.Reflection.Missing.Value;
-                Object oTemplatePath = @"D:\dev\DemoPdfSign\DemoPdfSign\Resources\Template\POC_Template.docx";
+                Object oTemplatePath = @"C:\dev\PdfSign\DemoPdfSign\Resources\Template\POC_Template.docx";
                 Object oHeader = "FirstName, LastName, Address, CityStateZip";
 
                 string[] fieldNames = new string[] { "SupplierName", "SupplierPocId", "OrderCode", "OrderDate", "OrderTime",
@@ -87,50 +89,64 @@ namespace DemoPdfSign.Controllers
                 };
 
                 Object oFalse = false;
-                Selection wrdSelection;
-                MailMerge wrdMailMerge;
-                MailMergeFields wrdMergeFields;
-                Application wrdApp = new Application();
-                _Document wrdDoc;
                 //wrdApp.Visible = true;
 
                 //Microsoft.Office.Interop.Word.Document wrdDoc = new Microsoft.Office.Interop.Word.Document();
 
-                wrdDoc = wrdApp.Documents.Add(ref oMissing, ref oMissing, ref oMissing, ref oMissing);
-                wrdDoc.Select();
+                wrdDoc = wrdApp.Documents.Add(oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
 
-                //var wrdDoc = wrdApp.Documents.Add(oTemplatePath);
+                foreach (Field myMergeField in wrdDoc.Fields)
+                {
 
-                wrdSelection = wrdApp.Selection;
-                wrdMailMerge = wrdDoc.MailMerge;
+                    Microsoft.Office.Interop.Word.Range rngFieldCode = myMergeField.Code;
+                    String fieldText = rngFieldCode.Text;
+                    // ONLY GETTING THE MAILMERGE FIELDS
+                    if (fieldText.StartsWith(" MERGEFIELD"))
+                    {
+                        // THE TEXT COMES IN THE FORMAT OF
+                        // MERGEFIELD  MyFieldName  \\* MERGEFORMAT
+                        // THIS HAS TO BE EDITED TO GET ONLY THE FIELDNAME "MyFieldName"
+                        Int32 endMerge = fieldText.IndexOf("\\");
+                        Int32 fieldNameLength = fieldText.Length - endMerge;
+                        String fieldName = fieldText.Substring(11, endMerge - 11);
+                        // GIVES THE FIELDNAMES AS THE USER HAD ENTERED IN .dot FILE
+                        fieldName = fieldName.Trim();
+                        // **** FIELD REPLACEMENT IMPLEMENTATION GOES HERE ****//
+                        // THE PROGRAMMER CAN HAVE HIS OWN IMPLEMENTATIONS HERE
+                        if (fieldName == "SupplierName")
+                        {
+                            myMergeField.Select();
+                            wrdApp.Selection.TypeText("ThanhEtn");
+                        }
 
-                wrdDoc.MailMerge.CreateDataSource(ref oTemplatePath, ref oMissing, ref oMissing, ref oHeader, ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing);
-
-                // Insert merge data.
-                wrdSelection.ParagraphFormat.Alignment = WdParagraphAlignment.wdAlignParagraphLeft;
-                wrdMergeFields = wrdMailMerge.Fields;
-                wrdMergeFields.Add(wrdSelection.Range, "SupplierName");
-                wrdSelection.TypeText("ThanhEtn");
-
-                // Perform mail merge.
-                wrdMailMerge.Destination = WdMailMergeDestination.wdSendToNewDocument;
-                wrdMailMerge.Execute(ref oFalse);
+                        if (fieldName == "Image:Signature")
+                        {
+                            myMergeField.Select();
+                            wrdApp.Selection.InlineShapes.AddPicture(imageUrl);
+                        }
+                    }
+                }
 
                 var savePath = environment.WebRootPath;
-                var filePath = @"Template\POC_bill.docx";
+                var filePath = @"Template\POC_bill.pdf";
 
                 if (!Directory.Exists(Path.Combine(savePath, "Template")))
                 {
                     Directory.CreateDirectory(Path.Combine(savePath, "Template"));
                 }
 
-                wrdDoc.SaveAs(Path.Combine(savePath, filePath));
+                wrdDoc.ExportAsFixedFormat(Path.Combine(savePath, filePath), Microsoft.Office.Interop.Word.WdExportFormat.wdExportFormatPDF);
 
                 return filePath;
             }
             catch (Exception ex)
             {
                 return ex.Message;
+            }
+            finally
+            {
+                wrdDoc.Close(WdSaveOptions.wdDoNotSaveChanges);
+                wrdApp.Quit();
             }
         }
 
