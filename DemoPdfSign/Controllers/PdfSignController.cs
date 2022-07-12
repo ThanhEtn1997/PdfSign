@@ -31,7 +31,7 @@ namespace DemoPdfSign.Controllers
         {
             try
             {
-                Aspose.Words.Document doc = new Aspose.Words.Document(@"D:\dev\DemoPdfSign\DemoPdfSign\Resources\Template\POC_Template.docx");
+                Aspose.Words.Document doc = new Aspose.Words.Document(@$"{environment.WebRootPath}\Template\POC_Template.docx");
 
                 var imageUrl = saveImage(pdfSignRequest.image);
 
@@ -47,11 +47,11 @@ namespace DemoPdfSign.Controllers
                 doc.MailMerge.Execute(fieldNames, fieldValues);
 
                 var savePath = environment.WebRootPath;
-                var filePath = @"Template\POC_bill.pdf";
+                var filePath = @"File\POC_bill.pdf";
 
-                if (!Directory.Exists(Path.Combine(savePath,"Template")))
+                if (!Directory.Exists(Path.Combine(savePath,"File")))
                 {
-                    Directory.CreateDirectory(Path.Combine(savePath, "Template"));
+                    Directory.CreateDirectory(Path.Combine(savePath, "File"));
                 }
 
                 doc.Save(Path.Combine(savePath, filePath));
@@ -66,7 +66,7 @@ namespace DemoPdfSign.Controllers
         [HttpPost("sign2")]
         public async Task<string> sign2(PdfSignRequest pdfSignRequest)
         {
-            Document wrdDoc = new Microsoft.Office.Interop.Word.Document();
+            Document wrdDoc = new Document();
             Application wrdApp = new Application();
 
             try
@@ -74,7 +74,7 @@ namespace DemoPdfSign.Controllers
                 var imageUrl = saveImage(pdfSignRequest.image);
 
                 Object oMissing = System.Reflection.Missing.Value;
-                Object oTemplatePath = @"C:\dev\PdfSign\DemoPdfSign\Resources\Template\POC_Template.docx";
+                Object oTemplatePath = @"D:\dev\DemoPdfSign\DemoPdfSign\Resources\Template\POC_Template.docx";
                 Object oHeader = "FirstName, LastName, Address, CityStateZip";
 
                 string[] fieldNames = new string[] { "SupplierName", "SupplierPocId", "OrderCode", "OrderDate", "OrderTime",
@@ -128,14 +128,14 @@ namespace DemoPdfSign.Controllers
                 }
 
                 var savePath = environment.WebRootPath;
-                var filePath = @"Template\POC_bill.pdf";
+                var filePath = @"File\POC_bill.pdf";
 
-                if (!Directory.Exists(Path.Combine(savePath, "Template")))
+                if (!Directory.Exists(Path.Combine(savePath, "File")))
                 {
-                    Directory.CreateDirectory(Path.Combine(savePath, "Template"));
+                    Directory.CreateDirectory(Path.Combine(savePath, "File"));
                 }
 
-                wrdDoc.ExportAsFixedFormat(Path.Combine(savePath, filePath), Microsoft.Office.Interop.Word.WdExportFormat.wdExportFormatPDF);
+                wrdDoc.ExportAsFixedFormat(Path.Combine(savePath, filePath), WdExportFormat.wdExportFormatPDF);
 
                 return filePath;
             }
